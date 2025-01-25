@@ -1,36 +1,45 @@
-import fs from "fs";
-import path from "path";
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import multer from 'multer';
+import multerS3 from 'multer-s3';
+
+// 配置 AWS S3
+const s3 = new S3Client({
+  region: 'us-east-2',
+  credentials: {
+    accessKeyId: 'AKIATQPD64TVL26XW5GU',
+    secretAccessKey: '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',
+  },
+});
+
+// 设置 multer 存储引擎为 S3
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: 'videofrank',  // 设置 S3 桶名称
+    acl: 'public-read',  // 设置文件为公共可读
+    metadata: (req, file, cb) => {
+      cb(null, { fieldName: file.fieldname });
+    },
+    key: (req, file, cb) => {
+      cb(null, file.originalname);  // 文件名
+    },
+  }),
+});
+
+const uploadHandler = (req, res) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Something went wrong during the file upload.' });
+    }
+    // 上传成功
+    res.status(200).json({ message: 'File uploaded successfully!' });
+  });
+};
 
 export const config = {
   api: {
-    bodyParser: {
-      sizeLimit: "10mb", // 限制上传文件大小
-    },
+    bodyParser: false, // 禁用默认的 body 解析器，使用 multer 处理
   },
 };
 
-export default async function handler(req, res) {
-  if (req.method === "POST") {
-    try {
-      const { file, fileName } = req.body;
-
-      // 解析保存路径
-      const uploadDir = path.join(process.cwd(), "public/uploads");
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      // 保存文件
-      const filePath = path.join(uploadDir, fileName);
-      const base64Data = file.replace(/^data:image\/\w+;base64,/, "");
-      fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
-
-      res.status(200).json({ message: "File uploaded successfully", filePath: `/uploads/${fileName}` });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "File upload failed" });
-    }
-  } else {
-    res.status(405).json({ message: "Method not allowed" });
-  }
-}
+export default uploadHandler;
