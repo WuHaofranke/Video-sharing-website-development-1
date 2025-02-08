@@ -89,7 +89,7 @@ async function uploadToS3(filePath: string, fileName: string, res: NextApiRespon
     Bucket: process.env.AWS_S3_BUCKET_NAME || 'videofrank',
     Key: `videos/${fileName}`,
     Body: fileStream,
-    ACL: 'public-read',
+    ACL: 'public-read' as const,
     ContentType: 'video/mp4',
   };
 
