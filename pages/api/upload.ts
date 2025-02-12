@@ -53,22 +53,12 @@ const uploadHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     const fileName = videoFile.originalFilename || uuidv4() + '.mp4';
 
     // 获取视频时长
-    const getDurationCommand = `ffprobe -i "${originalPath}" -show_entries format=duration -v quiet -of csv="p=0"`;
-    exec(getDurationCommand, (probeError, stdout) => {
-      if (probeError) {
-        console.error('ffprobe error:', probeError);
-        return res.status(500).json({ error: '无法读取视频元数据', details: probeError.message });
-      }
-
-      const duration = parseFloat(stdout.trim());
-      console.log(`视频时长: ${duration}秒, 文件大小: ${videoFile.size}字节`);
-
       // 如果视频超出限制，则裁剪视频
       
         uploadToS3(originalPath, fileName, res);
       
     })
-  });
+
 };
 
 async function uploadToS3(filePath: string, fileName: string, res: NextApiResponse) {
