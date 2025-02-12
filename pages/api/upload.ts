@@ -7,7 +7,7 @@ import { exec } from 'child_process';
 import formidable, { File } from 'formidable';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
-import ffmpeg from 'fluent-ffmpeg';
+
 
 
 
@@ -64,22 +64,10 @@ const uploadHandler = async (req: NextApiRequest, res: NextApiResponse) => {
       console.log(`视频时长: ${duration}秒, 文件大小: ${videoFile.size}字节`);
 
       // 如果视频超出限制，则裁剪视频
-      if (duration > MAX_DURATION || videoFile.size > MAX_SIZE) {
-        const outputVideoPath = path.join(os.tmpdir(), `processed-${Date.now()}-${fileName}`);
-        const compressCommand = `ffmpeg -i "${originalPath}" -t ${MAX_DURATION} -vf "scale=640:360" -b:v 1000k -preset fast "${outputVideoPath}"`;
-        exec(compressCommand, (ffmpegError) => {
-          if (ffmpegError) {
-            console.error('ffmpeg error:', ffmpegError);
-            // 如果裁剪失败，直接上传原始视频
-            return uploadToS3(originalPath, fileName, res);
-          }
-          console.log('视频裁剪成功:', outputVideoPath);
-          uploadToS3(outputVideoPath, fileName, res);
-        });
-      } else {
+      
         uploadToS3(originalPath, fileName, res);
-      }
-    });
+      
+    })
   });
 };
 
